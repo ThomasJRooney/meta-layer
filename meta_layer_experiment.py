@@ -18,6 +18,8 @@ class MetaLayerExperiment:
         self.prompts = []
         self.iterations = iterations
         self.generations = generations
+        self.winning_prompt_generator = None
+        self.winning_prompt = None
 
     def expected_score(self, r1, r2):
         return 1 / (1 + 10**((r2 - r1) / 400))
@@ -99,34 +101,60 @@ class MetaLayerExperiment:
         return prompt_ratings
 
     def prompt_generator_search(self):
-        # generate prompt generators
-        # Generate Prompts from each Generator
-        # Generate Outputs from each Prompt
-        # Rank Outputs Generated with Ranking Prompt
-        # Record Set of Best Prompts and Best Prompt Generators
-        # Rerun the Experiment a number of times each time seeding the best prompt generator from previous experiment.
-        # Declare an optimal prompt and move onto pass 2.
+        # Run the experiment for i number of iterations
         for i in range(len(self.iterations)):
+            # Generate prompt generators
             pgg = PromptGeneratorGenerator(self)
             self.prompt_generators = pgg.generate()
+            
+            # seed the past winning prompt generators into the end of self.prompt_generators list
+            # ppg.seed()
 
+            # Generate prompts from each generator
             for i in range(len(self.prompt_generators)):
                 pg = self.prompt_generators[i]
                 prompt = pg.generate()
-                self.prompts.append((i, prompt))
+                # Save each prompt set in same index of the prompt generator that generated the prompts.
+                self.prompts.append(prompt)
 
+            # Generate Outputs from each Prompt
             for i in range(len(self.prompts)):
-                prompt = self.prompts[i]
-                prompt.generate()
+                prompt_set = self.prompts[i]
+                for prompt in range(len(prompt_set)):
+                    # output data is saved within the prompt object itself
+                    prompt.generate()
 
+            # Rank Outputs Generated with Ranking Prompt
             self.test_candidate_prompts(self.prompts, self.tests)
-            ranked_ratings = sorted(prompt_ratings.items(), key=lambda item: item[1], reverse=True)
-            # add to best prompts for pass 2
-            # add to best prompt_generators
-        
+
+            # record winning prompt generator and record winning prompts
+
+        # return the last winning prompt generator
+        pass
 
     def prompt_search(self):
-        pass
+         # Run the experiment for i number of iterations
+        for i in range(len(self.iterations)):
+            # Generate prompts with winning prompt generator
+            pg = self.winning_prompt_generator
+            prompt = pg.generate()
+            # all prompts in index 0
+            self.prompts = prompt
+            
+            # seed the past winning prompts into the end of self.prompts list
+            # pg.seed()
+
+            # Generate Outputs from each Prompt
+            for i in range(len(self.prompts)):
+                prompt_set = self.prompts[i]
+                for prompt in range(len(prompt_set)):
+                    # output data is saved within the prompt object itself
+                    prompt.generate()
+
+            # Rank Outputs Generated with Ranking Prompt
+            self.test_candidate_prompts(self.prompts, self.tests)
+
+            # record winning prompt 
 
     def save_experiment_results(self):
         experiment_folder = os.path.join("experiments", self.name)
@@ -142,8 +170,3 @@ class MetaLayerExperiment:
         self.prompt_generator_search(self)
         self.prompt_search(self)
         self.save_experiment_results(self)
-
-
-
-
-
